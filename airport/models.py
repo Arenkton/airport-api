@@ -25,3 +25,23 @@ class Route(models.Model):
         return f"{self.source.name} - {self.destination.name}"
 
 
+class AirplaneType(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class Airplane(models.Model):
+    name = models.CharField(max_length=255)
+    rows = models.PositiveIntegerField()
+    seats_in_row = models.PositiveIntegerField()
+    airplane_type = models.ForeignKey(
+        AirplaneType,
+        on_delete=models.CASCADE,
+        related_name="airplanes",
+    )
+
+    def __str__(self):
+        return self.name
+
