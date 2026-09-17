@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Airport(models.Model):
     name = models.CharField(max_length=255)
@@ -74,3 +75,33 @@ class Flight(models.Model):
 
     def __str__(self):
         return f"{self.route} | {self.departure_time}"
+
+
+class Order(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="orders",
+    )
+
+    def __str__(self):
+        return str(self.created_at)
+
+
+class Ticket(models.Model):
+    row = models.PositiveIntegerField()
+    seat = models.PositiveIntegerField()
+    flight = models.ForeignKey(
+        Flight,
+        on_delete=models.CASCADE,
+        related_name="tickets",
+    )
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="tickets",
+    )
+
+    def __str__(self):
+        return f"Flight {self.flight_id}: row {self.row}, seat {self.seat}"
