@@ -33,6 +33,11 @@ class RouteSerializer(serializers.ModelSerializer):
         )
 
 
+class RouteDetailSerializer(RouteSerializer):
+    source = AirportSerializer(read_only=True)
+    destination = AirportSerializer(read_only=True)
+
+
 class AirplaneTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirplaneType
@@ -52,6 +57,10 @@ class AirplaneSerializer(serializers.ModelSerializer):
             "seats_in_row",
             "airplane_type",
         )
+
+
+class AirplaneDetailSerializer(AirplaneSerializer):
+    airplane_type = AirplaneTypeSerializer(read_only=True)
 
 
 class CrewSerializer(serializers.ModelSerializer):
@@ -78,6 +87,6 @@ class FlightSerializer(serializers.ModelSerializer):
 
 
 class FlightDetailSerializer(FlightSerializer):
-    route = RouteSerializer(read_only=True)
-    airplane = AirplaneSerializer(read_only=True)
+    route = RouteDetailSerializer(read_only=True)
+    airplane = AirplaneDetailSerializer(read_only=True)
     crew = CrewSerializer(many=True, read_only=True)
