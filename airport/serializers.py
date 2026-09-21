@@ -75,3 +75,9 @@ class FlightSerializer(serializers.ModelSerializer):
             "departure_time",
             "arrival_time",
         )
+
+
+class FlightDetailSerializer(FlightSerializer):
+    route = RouteSerializer(read_only=True)
+    airplane = AirplaneSerializer(read_only=True)
+    crew = CrewSerializer(many=True, read_only=True)
