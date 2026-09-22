@@ -1,4 +1,5 @@
-from rest_framework import viewsets
+from rest_framework import mixins, viewsets
+from rest_framework.permissions import IsAuthenticated
 
 from airport.models import (
     Airport,
@@ -7,6 +8,7 @@ from airport.models import (
     Airplane,
     Crew,
     Flight,
+    Order,
 )
 from airport.serializers import (
     AirportSerializer,
@@ -18,6 +20,7 @@ from airport.serializers import (
     CrewSerializer,
     FlightSerializer,
     FlightDetailSerializer,
+    OrderSerializer,
 )
 
 
@@ -67,3 +70,18 @@ class FlightViewSet(viewsets.ModelViewSet):
             return FlightDetailSerializer
 
         return FlightSerializer
+
+
+class OrderViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = OrderSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return Order.objects.filter(
+            user=self.request.user
+        ).prefetch_related("tickets")
