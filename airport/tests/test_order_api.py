@@ -100,11 +100,6 @@ class OrderApiTests(APITestCase):
         self.assertEqual(order.user, self.user)
         self.assertEqual(order.tickets.count(), 2)
 
-    def get_queryset(self):
-        return Order.objects.filter(
-            user=self.request.user
-        ).prefetch_related("tickets")
-
     def test_user_cannot_access_other_users_order(self):
         other_order = Order.objects.create(
             user=self.other_user,
@@ -150,4 +145,140 @@ class OrderApiTests(APITestCase):
         )
 
         self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(Ticket.objects.count(),0)
+
+    def test_cannot_book_invalid_row(self):
+        self.client.force_authenticate(user=self.user)
+
+        payload = {
+            "tickets": [
+                {
+                    "row": 35,
+                    "seat": 3,
+                    "flight": self.flight.id,
+                }
+            ]
+        }
+
+        response = self.client.post(
+            self.order_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(Order.objects.count(), 0)
         self.assertEqual(Ticket.objects.count(), 0)
+
+    def test_cannot_book_invalid_seat(self):
+        self.client.force_authenticate(user=self.user)
+
+        payload = {
+            "tickets": [
+                {
+                    "row": 5,
+                    "seat": 7,                        "flight": self.flight.id,
+                }
+            ]
+        }
+
+        response = self.client.post(
+            self.order_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(Ticket.objects.count(), 0)
+
+    def test_cannot_book_duplicate_seats_in_same_order(self):
+        self.client.force_authenticate(user=self.user)
+
+        payload = {
+            "tickets": [
+                {
+                    "row": 5,
+                    "seat": 3,
+                    "flight": self.flight.id,
+                },
+                {
+                    "row": 5,
+                    "seat": 3,
+                    "flight": self.flight.id,
+                },
+            ]
+        }
+
+        response = self.client.post(
+            self.order_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(Ticket.objects.count(), 0)
+
+    def test_cannot_book_already_booked_seat(self):
+        existing_order = Order.objects.create(
+            user=self.other_user,
+        )
+
+        Ticket.objects.create(
+            order=existing_order,
+            flight=self.flight,
+            row=5,
+            seat=3,
+        )
+
+        self.client.force_authenticate(user=self.user)
+
+        payload = {
+            "tickets": [
+                {
+                    "row": 5,
+                    "seat": 3,
+                    "flight": self.flight.id,
+                },
+                {
+                    "row": 5,
+                    "seat": 4,
+                    "flight": self.flight.id,
+                },
+            ]
+        }
+
+        response = self.client.post(
+            self.order_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(Order.objects.count(), 1)
+        self.assertEqual(Ticket.objects.count(), 1)
+
+        self.assertFalse(
+            Ticket.objects.filter(
+                flight=self.flight,
+                row=5,
+                seat=4,
+            ).exists()
+        )
