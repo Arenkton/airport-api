@@ -95,6 +95,9 @@ class FlightDetailSerializer(FlightSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    row = serializers.IntegerField(min_value=1)
+    seat = serializers.IntegerField(min_value=1)
+
     class Meta:
         model = Ticket
         fields = (
@@ -103,6 +106,36 @@ class TicketSerializer(serializers.ModelSerializer):
             "seat",
             "flight",
         )
+        read_only_fields = ("id",)
+
+    def validate(self, attrs):
+        flight = attrs["flight"]
+        row = attrs["row"]
+        seat = attrs["seat"]
+
+        airplane = flight.airplane
+
+        if row > airplane.rows:
+            raise serializers.ValidationError(
+                {
+                    "row": (
+                        f"Row must be between 1 and "
+                        f"{airplane.rows}."
+                    )
+                }
+            )
+
+        if seat > airplane.seats_in_row:
+            raise serializers.ValidationError(
+                {
+                    "seat": (
+                        f"Seat must be between 1 and "
+                        f"{airplane.seats_in_row}."
+                    )
+                }
+            )
+
+        return attrs
 
 
 class OrderSerializer(serializers.ModelSerializer):
