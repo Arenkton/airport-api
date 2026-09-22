@@ -34,6 +34,28 @@ class RouteSerializer(serializers.ModelSerializer):
             "distance",
         )
 
+    def validate(self, attrs):
+        source = attrs.get(
+            "source",
+            getattr(self.instance, "source", None),
+        )
+        destination = attrs.get(
+            "destination",
+            getattr(self.instance, "destination", None),
+        )
+
+        if source == destination:
+            raise serializers.ValidationError(
+                {
+                    "destination": (
+                        "Source and destination airports "
+                        "must be different."
+                    )
+                }
+            )
+
+        return attrs
+
 
 class RouteDetailSerializer(RouteSerializer):
     source = AirportSerializer(read_only=True)
@@ -86,6 +108,32 @@ class FlightSerializer(serializers.ModelSerializer):
             "departure_time",
             "arrival_time",
         )
+
+    def validate(self, attrs):
+        departure_time = attrs.get(
+            "departure_time",
+            getattr(self.instance, "departure_time", None),
+        )
+        arrival_time = attrs.get(
+            "arrival_time",
+            getattr(self.instance, "arrival_time", None),
+        )
+
+        if (
+            departure_time is not None
+            and arrival_time is not None
+            and arrival_time <= departure_time
+        ):
+            raise serializers.ValidationError(
+                {
+                    "arrival_time": (
+                        "Arrival time must be later "
+                        "than departure time."
+                    )
+                }
+            )
+
+        return attrs
 
 
 class FlightDetailSerializer(FlightSerializer):
