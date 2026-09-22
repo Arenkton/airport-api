@@ -1,6 +1,7 @@
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
+from airport.permissions import IsAdminOrReadOnly
 
 from airport.models import (
     Airport,
@@ -29,11 +30,13 @@ from airport.serializers import (
 class AirportViewSet(viewsets.ModelViewSet):
     queryset = Airport.objects.all()
     serializer_class = AirportSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -42,21 +45,16 @@ class RouteViewSet(viewsets.ModelViewSet):
         return RouteSerializer
 
 
-class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.all()
-    serializer_class = AirplaneSerializer
-
-    def get_serializer_class(self):
-        if self.action in ("list", "retrieve"):
-            return AirplaneDetailSerializer
-
-        return AirplaneSerializer
-
-
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
+
+class AirplaneViewSet(viewsets.ModelViewSet):
+    queryset = Airplane.objects.all()
+    serializer_class = AirplaneSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -68,6 +66,7 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 class CrewViewSet(viewsets.ModelViewSet):
     queryset = Crew.objects.all()
     serializer_class = CrewSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class FlightViewSet(viewsets.ModelViewSet):
@@ -80,6 +79,7 @@ class FlightViewSet(viewsets.ModelViewSet):
     )
 
     serializer_class = FlightSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
     def get_queryset(self):
         queryset = super().get_queryset()
