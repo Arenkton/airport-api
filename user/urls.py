@@ -1,6 +1,6 @@
 from django.urls import path
 
-from user.views import UserCreateView
+from user.views import UserCreateView, CreateTokenView
 
 
 urlpatterns = [
@@ -8,5 +8,10 @@ urlpatterns = [
         "register/",
         UserCreateView.as_view(),
         name="register",
+    ),
+    path(
+        "token/",
+        CreateTokenView.as_view(),
+        name="token",
     ),
 ]
