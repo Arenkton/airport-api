@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from airport.models import (
     Airport,
@@ -134,7 +134,16 @@ class TicketSerializer(serializers.ModelSerializer):
                     )
                 }
             )
-
+        if Ticket.objects.filter(
+                flight=flight,
+                row=row,
+                seat=seat,
+        ).exists():
+            raise serializers.ValidationError(
+                {
+                    "seat": "This seat is already booked for this flight."
+                }
+            )
         return attrs
 
 
@@ -150,18 +159,47 @@ class OrderSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "created_at")
 
-    @transaction.atomic
+    def validate_tickets(self, tickets):
+        booked_seats = set()
+
+        for ticket in tickets:
+            seat_key = (
+                ticket["flight"].pk,
+                ticket["row"],
+                ticket["seat"],
+            )
+
+            if seat_key in booked_seats:
+                raise serializers.ValidationError(
+                    "Duplicate seats in the same order are not allowed."
+                )
+
+            booked_seats.add(seat_key)
+
+        return tickets
+
     def create(self, validated_data):
         tickets_data = validated_data.pop("tickets")
 
-        order = Order.objects.create(
-            user=self.context["request"].user,
-        )
+        try:
+            with transaction.atomic():
+                order = Order.objects.create(
+                    user=self.context["request"].user,
+                )
 
-        for ticket_data in tickets_data:
-            Ticket.objects.create(
-                order=order,
-                **ticket_data,
+                for ticket_data in tickets_data:
+                    Ticket.objects.create(
+                        order=order,
+                        **ticket_data,
+                    )
+
+                return order
+
+        except IntegrityError:
+            raise serializers.ValidationError(
+                {
+                    "tickets": (
+                        "One or more selected seats are already booked."
+                    )
+                }
             )
-
-        return order
