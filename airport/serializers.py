@@ -93,6 +93,20 @@ class FlightDetailSerializer(FlightSerializer):
     airplane = AirplaneDetailSerializer(read_only=True)
     crew = CrewSerializer(many=True, read_only=True)
 
+    available_seats = serializers.SerializerMethodField()
+
+    class Meta(FlightSerializer.Meta):
+        fields = FlightSerializer.Meta.fields + (
+            "available_seats",
+        )
+
+    def get_available_seats(self, obj):
+        total_seats = (
+            obj.airplane.rows * obj.airplane.seats_in_row
+        )
+
+        return total_seats - obj.booked_seats
+
 
 class TicketSerializer(serializers.ModelSerializer):
     row = serializers.IntegerField(min_value=1)

@@ -1,5 +1,6 @@
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Count
 
 from airport.models import (
     Airport,
@@ -73,7 +74,9 @@ class FlightViewSet(viewsets.ModelViewSet):
         "route__source",
         "route__destination",
         "airplane__airplane_type",
-    ).prefetch_related("crew")
+    ).prefetch_related("crew").annotate(
+        booked_seats=Count("tickets"),
+    )
 
     serializer_class = FlightSerializer
 
