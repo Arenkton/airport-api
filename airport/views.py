@@ -21,6 +21,7 @@ from airport.serializers import (
     CrewSerializer,
     FlightSerializer,
     FlightDetailSerializer,
+    FlightFilterSerializer,
     OrderSerializer,
 )
 
@@ -81,20 +82,36 @@ class FlightViewSet(viewsets.ModelViewSet):
     serializer_class = FlightSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.all()
+        queryset = super().get_queryset()
 
-        source = self.request.query_params.get("source")
-        destination = self.request.query_params.get("destination")
-        date = self.request.query_params.get("date")
+        if self.action != "list":
+            return queryset
 
-        if source:
-            queryset = queryset.filter(route__source_id=source)
+        filter_serializer = FlightFilterSerializer(
+            data=self.request.query_params
+        )
+        filter_serializer.is_valid(raise_exception=True)
 
-        if destination:
-            queryset = queryset.filter(route__destination_id=destination)
+        filters = filter_serializer.validated_data
 
-        if date:
-            queryset = queryset.filter(departure_time__date=date)
+        source = filters.get("source")
+        destination = filters.get("destination")
+        date = filters.get("date")
+
+        if source is not None:
+            queryset = queryset.filter(
+                route__source_id=source
+            )
+
+        if destination is not None:
+            queryset = queryset.filter(
+                route__destination_id=destination
+            )
+
+        if date is not None:
+            queryset = queryset.filter(
+                departure_time__date=date
+            )
 
         return queryset
 

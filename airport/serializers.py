@@ -108,6 +108,18 @@ class FlightDetailSerializer(FlightSerializer):
         return total_seats - obj.booked_seats
 
 
+class FlightFilterSerializer(serializers.Serializer):
+    source = serializers.IntegerField(
+        min_value=1,
+        required=False,
+    )
+    destination = serializers.IntegerField(
+        min_value=1,
+        required=False,
+    )
+    date = serializers.DateField(required=False)
+
+
 class TicketSerializer(serializers.ModelSerializer):
     row = serializers.IntegerField(min_value=1)
     seat = serializers.IntegerField(min_value=1)
