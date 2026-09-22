@@ -40,14 +40,21 @@ class RouteViewSet(viewsets.ModelViewSet):
         return RouteSerializer
 
 
+class AirplaneViewSet(viewsets.ModelViewSet):
+    queryset = Airplane.objects.all()
+    serializer_class = AirplaneSerializer
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return AirplaneDetailSerializer
+
+        return AirplaneSerializer
+
+
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
 
-
-class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.all()
-    serializer_class = AirplaneSerializer
 
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
@@ -62,8 +69,31 @@ class CrewViewSet(viewsets.ModelViewSet):
 
 
 class FlightViewSet(viewsets.ModelViewSet):
-    queryset = Flight.objects.all()
+    queryset = Flight.objects.select_related(
+        "route__source",
+        "route__destination",
+        "airplane__airplane_type",
+    ).prefetch_related("crew")
+
     serializer_class = FlightSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset.all()
+
+        source = self.request.query_params.get("source")
+        destination = self.request.query_params.get("destination")
+        date = self.request.query_params.get("date")
+
+        if source:
+            queryset = queryset.filter(route__source_id=source)
+
+        if destination:
+            queryset = queryset.filter(route__destination_id=destination)
+
+        if date:
+            queryset = queryset.filter(departure_time__date=date)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action in ("list", "retrieve"):
