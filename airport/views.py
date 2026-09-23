@@ -169,6 +169,7 @@ class OrderViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
+    queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = (IsAuthenticated,)
 

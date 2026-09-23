@@ -2,6 +2,9 @@ from rest_framework import serializers
 
 from django.db import IntegrityError, transaction
 
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
+
 from airport.models import (
     Airport,
     Route,
@@ -148,6 +151,7 @@ class FlightDetailSerializer(FlightSerializer):
             "available_seats",
         )
 
+    @extend_schema_field(OpenApiTypes.INT)
     def get_available_seats(self, obj):
         total_seats = (
             obj.airplane.rows * obj.airplane.seats_in_row
