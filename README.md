@@ -343,6 +343,16 @@ Flight detail responses include an `available_seats` field.
 
 The number of available seats is calculated by subtracting the number of booked tickets from the airplane's total seating capacity.
 
+## Database Diagram
+
+The database consists of airports, routes, airplanes, airplane types, crew members, flights, orders, tickets, and users.
+
+The diagram below illustrates the relationships between these entities.
+
+![Airport API Database Diagram](docs/airport-db-diagram.png)
+
+[View and edit the database diagram](docs/airport-db-diagram.drawio)
+
 ## Running tests
 
 Run all automated tests:
