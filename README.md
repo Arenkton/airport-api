@@ -353,6 +353,38 @@ The diagram below illustrates the relationships between these entities.
 
 [View and edit the database diagram](docs/airport-db-diagram.drawio)
 
+## API Screenshots
+
+### Swagger Documentation
+
+Interactive API documentation with available endpoints.
+
+![Swagger Documentation](docs/screenshots/swagger.png)
+
+### Flight Filtering
+
+Search for flights by source airport, destination airport, and departure date.
+
+![Flight Filtering](docs/screenshots/flight-filtering.png)
+
+### Flight Details
+
+Detailed flight information, including the route, airplane, crew, and available seats.
+
+![Flight Details](docs/screenshots/flight-details.png)
+
+### Ticket Booking
+
+Create an order containing multiple tickets.
+
+![Ticket Booking](docs/screenshots/ticket-booking.png)
+
+### Booking Validation
+
+Attempting to book an already occupied seat returns a validation error.
+
+![Booking Validation](docs/screenshots/booking-validation.png)
+
 ## Running tests
 
 Run all automated tests:
