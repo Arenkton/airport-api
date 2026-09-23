@@ -96,12 +96,13 @@ class FlightApiTests(APITestCase):
             status.HTTP_200_OK,
         )
 
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data["count"], 1)
 
         self.assertEqual(
-            response.data[0]["id"],
+            response.data["results"][0]["id"],
             self.flight.id,
         )
+
     def test_filter_flights_by_destination(self):
         response = self.client.get(
             self.list_url,
@@ -113,12 +114,16 @@ class FlightApiTests(APITestCase):
             status.HTTP_200_OK,
         )
 
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
 
         self.assertEqual(
-            response.data[0]["id"],
+            response.data["results"][0]["id"],
             self.other_flight.id,
         )
+
     def test_filter_flights_by_date(self):
         response = self.client.get(
             self.list_url,
@@ -130,12 +135,16 @@ class FlightApiTests(APITestCase):
             status.HTTP_200_OK,
         )
 
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
 
         self.assertEqual(
-            response.data[0]["id"],
+            response.data["results"][0]["id"],
             self.flight.id,
         )
+
     def test_available_seats_count(self):
         user = get_user_model().objects.create_user(
             username="test_user",
