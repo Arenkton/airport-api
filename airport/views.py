@@ -26,6 +26,13 @@ from airport.serializers import (
     OrderSerializer,
 )
 
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+)
+from drf_spectacular.types import OpenApiTypes
+
 
 class AirportViewSet(viewsets.ModelViewSet):
     queryset = Airport.objects.all()
@@ -68,7 +75,36 @@ class CrewViewSet(viewsets.ModelViewSet):
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
-
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="source",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter flights by source airport ID.",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="destination",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter flights by destination airport ID.",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Filter flights by departure date "
+                    "(YYYY-MM-DD)."
+                ),
+                required=False,
+            ),
+        ]
+    )
+)
 class FlightViewSet(viewsets.ModelViewSet):
     queryset = Flight.objects.select_related(
         "route__source",
