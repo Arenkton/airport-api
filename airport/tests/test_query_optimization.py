@@ -3,12 +3,18 @@ from django.urls import reverse
 
 from rest_framework import status
 from rest_framework.test import APIClient
+from datetime import datetime, timezone
+
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from airport.models import (
     Airport,
     Route,
     AirplaneType,
     Airplane,
+    Crew,
+    Flight,
 )
 
 class RouteQueryOptimizationTests(TestCase):
@@ -87,4 +93,102 @@ class AirplaneQueryOptimizationTests(TestCase):
         self.assertEqual(
             len(response.data["results"]),
             5,
+        )
+
+
+class FlightQueryOptimizationTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.url = reverse("flight-list")
+
+        self.source = Airport.objects.create(
+            name="Krakow Airport",
+            closest_big_city="Krakow",
+        )
+
+        self.destination = Airport.objects.create(
+            name="Warsaw Chopin Airport",
+            closest_big_city="Warsaw",
+        )
+
+        self.route = Route.objects.create(
+            source=self.source,
+            destination=self.destination,
+            distance=295,
+        )
+
+        self.airplane_type = AirplaneType.objects.create(
+            name="Boeing",
+        )
+
+        self.airplane = Airplane.objects.create(
+            name="Boeing 737",
+            rows=30,
+            seats_in_row=6,
+            airplane_type=self.airplane_type,
+        )
+
+        self.crew_member = Crew.objects.create(
+            first_name="John",
+            last_name="Smith",
+        )
+
+    def create_flight(self, day):
+        flight = Flight.objects.create(
+            route=self.route,
+            airplane=self.airplane,
+            departure_time=datetime(
+                2026, 10, day, 10, 0,
+                tzinfo=timezone.utc,
+            ),
+            arrival_time=datetime(
+                2026, 10, day, 12, 0,
+                tzinfo=timezone.utc,
+            ),
+        )
+
+        flight.crew.add(self.crew_member)
+
+        return flight
+
+    def test_flight_list_query_count(self):
+        self.create_flight(day=1)
+
+        with CaptureQueriesContext(connection) as first_queries:
+            first_response = self.client.get(self.url)
+
+        self.assertEqual(
+            first_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            first_response.data["count"],
+            1,
+        )
+
+        for day in range(2, 6):
+            self.create_flight(day=day)
+
+        with CaptureQueriesContext(connection) as second_queries:
+            second_response = self.client.get(self.url)
+
+        self.assertEqual(
+            second_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            second_response.data["count"],
+            5,
+        )
+
+        self.assertEqual(
+            len(second_response.data["results"]),
+            5,
+        )
+
+        self.assertEqual(
+            len(first_queries),
+            len(second_queries),
         )
