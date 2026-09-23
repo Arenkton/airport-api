@@ -41,7 +41,10 @@ class AirportViewSet(viewsets.ModelViewSet):
 
 
 class RouteViewSet(viewsets.ModelViewSet):
-    queryset = Route.objects.all()
+    queryset = Route.objects.select_related(
+        "source",
+        "destination",
+    )
     serializer_class = RouteSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
@@ -59,7 +62,9 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.all()
+    queryset = Airplane.objects.select_related(
+        "airplane_type",
+    )
     serializer_class = AirplaneSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
