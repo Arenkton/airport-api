@@ -11,6 +11,7 @@ from airport.models import (
     Route,
     AirplaneType,
     Airplane,
+    Crew,
     Flight,
     Order,
     Ticket,
@@ -50,6 +51,11 @@ class FlightApiTests(APITestCase):
             rows=30,
             seats_in_row=6,
             airplane_type=self.airplane_type,
+        )
+
+        self.crew_member = Crew.objects.create(
+            first_name="John",
+            last_name="Smith",
         )
 
         self.flight = Flight.objects.create(
@@ -161,3 +167,161 @@ class FlightApiTests(APITestCase):
             response.data["available_seats"],
             179,
         )
+
+    def test_filter_flights_with_invalid_source(self):
+        response = self.client.get(
+            self.list_url,
+            {"source": "invalid"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn("source", response.data)
+
+    def test_filter_flights_with_invalid_date(self):
+        response = self.client.get(
+            self.list_url,
+            {"date": "invalid-date"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn("date", response.data)
+
+    def test_cannot_create_flight_with_invalid_times(self):
+        admin_user = get_user_model().objects.create_superuser(
+            username="admin_user",
+            email="admin@example.com",
+            password="TestPassword123!",
+        )
+
+        self.client.force_authenticate(user=admin_user)
+
+        payload = {
+            "route": self.route.id,
+            "airplane": self.airplane.id,
+            "crew": [self.crew_member.id],
+            "departure_time": "2026-10-03T15:00:00Z",
+            "arrival_time": "2026-10-03T14:00:00Z",
+        }
+
+        response = self.client.post(
+            self.list_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn("arrival_time", response.data)
+
+        self.assertEqual(Flight.objects.count(), 2)
+
+    def test_cannot_update_flight_with_invalid_times(self):
+        admin_user = get_user_model().objects.create_superuser(
+            username="admin_user",
+            email="admin@example.com",
+            password="TestPassword123!",
+        )
+
+        self.client.force_authenticate(user=admin_user)
+
+        url = reverse(
+            "flight-detail",
+            args=[self.flight.id],
+        )
+
+        payload = {
+            "arrival_time": "2026-10-01T09:00:00Z",
+        }
+
+        response = self.client.patch(
+            url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn("arrival_time", response.data)
+
+        self.flight.refresh_from_db()
+
+        self.assertEqual(
+            self.flight.arrival_time,
+            datetime(
+                2026, 10, 1, 11, 0,
+                tzinfo=timezone.utc,
+            ),
+        )
+
+    def test_regular_user_cannot_create_flight(self):
+        user = get_user_model().objects.create_user(
+            username="regular_user",
+            password="TestPassword123!",
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "route": self.route.id,
+            "airplane": self.airplane.id,
+            "crew": [self.crew_member.id],
+            "departure_time": "2026-10-03T10:00:00Z",
+            "arrival_time": "2026-10-03T12:00:00Z",
+        }
+
+        response = self.client.post(
+            self.list_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+        self.assertEqual(Flight.objects.count(), 2)
+
+    def test_admin_can_create_flight(self):
+        admin_user = get_user_model().objects.create_superuser(
+            username="admin_user",
+            email="admin@example.com",
+            password="TestPassword123!",
+        )
+
+        self.client.force_authenticate(user=admin_user)
+
+        payload = {
+            "route": self.route.id,
+            "airplane": self.airplane.id,
+            "crew": [self.crew_member.id],
+            "departure_time": "2026-10-03T10:00:00Z",
+            "arrival_time": "2026-10-03T12:00:00Z",
+        }
+
+        response = self.client.post(
+            self.list_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(Flight.objects.count(), 3)
