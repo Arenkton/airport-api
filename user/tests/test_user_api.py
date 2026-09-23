@@ -135,3 +135,129 @@ class UserApiTests(APITestCase):
         )
 
         self.assertNotIn("password", response.data)
+
+    def test_update_user_profile(self):
+        self.client.force_authenticate(user=self.user)
+
+        payload = {
+            "first_name": "Michael",
+            "last_name": "Brown",
+            "email": "updated@example.com",
+        }
+
+        response = self.client.patch(
+            self.me_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertEqual(
+            self.user.first_name,
+            payload["first_name"],
+        )
+
+        self.assertEqual(
+            self.user.last_name,
+            payload["last_name"],
+        )
+
+        self.assertEqual(
+            self.user.email,
+            payload["email"],
+        )
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+
+        user = super().update(instance, validated_data)
+
+        if password:
+            user.set_password(password)
+            user.save()
+
+        return user
+
+    def test_update_user_password(self):
+        self.client.force_authenticate(user=self.user)
+
+        payload = {
+            "password": "NewSecurePassword123!",
+        }
+
+        response = self.client.patch(
+            self.me_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.user.refresh_from_db()
+
+        self.assertTrue(
+            self.user.check_password(payload["password"])
+        )
+
+        self.assertFalse(
+            self.user.check_password("TestPassword123!")
+        )
+
+        self.assertNotIn("password", response.data)
+
+    def test_authentication_after_password_change(self):
+        self.client.force_authenticate(user=self.user)
+
+        self.client.patch(
+            self.me_url,
+            {
+                "password": "NewSecurePassword123!",
+            },
+            format="json",
+        )
+
+        self.client.force_authenticate(user=None)
+
+        old_password_response = self.client.post(
+            self.token_url,
+            {
+                "username": "test_user",
+                "password": "TestPassword123!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            old_password_response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        new_password_response = self.client.post(
+            self.token_url,
+            {
+                "username": "test_user",
+                "password": "NewSecurePassword123!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            new_password_response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertIn(
+            "token",
+            new_password_response.data,
+        )
+
+
