@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
@@ -221,6 +222,10 @@ class TicketSerializer(serializers.ModelSerializer):
                 {
                     "seat": "This seat is already booked for this flight."
                 }
+            )
+        if flight.departure_time <= timezone.now():
+            raise serializers.ValidationError(
+                {"flight": "Cannot book a flight that has already departed."}
             )
         return attrs
 
