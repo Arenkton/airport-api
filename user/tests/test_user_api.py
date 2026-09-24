@@ -259,5 +259,3 @@ class UserApiTests(APITestCase):
             "token",
             new_password_response.data,
         )
-
-

@@ -3,6 +3,8 @@ from django.urls import reverse
 
 from rest_framework import status
 from rest_framework.test import APITestCase
+from datetime import timedelta
+from django.utils import timezone
 
 from airport.models import (
     Airport,
@@ -54,11 +56,13 @@ class OrderApiTests(APITestCase):
             airplane_type=self.airplane_type,
         )
 
+        departure_time = timezone.now() + timedelta(days=7)
+
         self.flight = Flight.objects.create(
             route=self.route,
             airplane=self.airplane,
-            departure_time="2026-10-01T10:00:00Z",
-            arrival_time="2026-10-01T11:00:00Z",
+            departure_time=departure_time,
+            arrival_time=departure_time + timedelta(hours=1),
         )
 
         self.order_url = reverse("order-list")
@@ -145,7 +149,7 @@ class OrderApiTests(APITestCase):
         )
 
         self.assertEqual(Order.objects.count(), 0)
-        self.assertEqual(Ticket.objects.count(),0)
+        self.assertEqual(Ticket.objects.count(), 0)
 
     def test_cannot_book_invalid_row(self):
         self.client.force_authenticate(user=self.user)
@@ -282,3 +286,38 @@ class OrderApiTests(APITestCase):
                 seat=4,
             ).exists()
         )
+
+    def test_cannot_book_departed_flight(self):
+        self.client.force_authenticate(user=self.user)
+
+        departure_time = timezone.now() - timedelta(days=5)
+
+        self.flight.departure_time = departure_time
+        self.flight.arrival_time = departure_time + timedelta(hours=1)
+        self.flight.save(
+            update_fields=["departure_time", "arrival_time"]
+        )
+
+        payload = {
+            "tickets": [
+                {
+                    "row": 5,
+                    "seat": 3,
+                    "flight": self.flight.id,
+                }
+            ]
+        }
+
+        response = self.client.post(
+            self.order_url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(Ticket.objects.count(), 0)

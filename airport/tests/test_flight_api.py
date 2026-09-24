@@ -85,6 +85,7 @@ class FlightApiTests(APITestCase):
         )
 
         self.list_url = reverse("flight-list")
+
     def test_filter_flights_by_source(self):
         response = self.client.get(
             self.list_url,

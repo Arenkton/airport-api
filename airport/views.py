@@ -80,6 +80,7 @@ class CrewViewSet(viewsets.ModelViewSet):
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
+
 @extend_schema_view(
     list=extend_schema(
         parameters=[

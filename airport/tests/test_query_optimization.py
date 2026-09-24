@@ -20,6 +20,7 @@ from airport.models import (
     Ticket,
 )
 
+
 class RouteQueryOptimizationTests(TestCase):
     def setUp(self):
         self.client = APIClient()

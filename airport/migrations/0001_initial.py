@@ -15,9 +15,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Airport',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('closest_big_city', models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    'id',
+                     models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID')),
+                (
+                    'name',
+                    models.CharField(max_length=255)),
+                (
+                    'closest_big_city',
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True)),
             ],
         ),
         migrations.CreateModel(
