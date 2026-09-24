@@ -27,6 +27,10 @@ services:
       - "8000:8000"
 
     environment:
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+
       DB_HOST: db
       DB_PORT: "5432"
       DB_NAME: ${DB_NAME}
