@@ -232,6 +232,9 @@ Flight details include the route, airplane, crew, departure and arrival times, a
 | GET    | `/api/airport/orders/{id}/` | Retrieve an order belonging to the authenticated user |
 
 Users cannot access other users' orders.
+Order list and detail responses include flight information for each
+ticket, including the source airport, destination airport, and
+departure time.
 
 ### User Management
 
