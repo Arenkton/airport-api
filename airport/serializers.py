@@ -286,3 +286,54 @@ class OrderSerializer(serializers.ModelSerializer):
                     )
                 }
             )
+
+
+class OrderFlightSerializer(serializers.ModelSerializer):
+    source = serializers.CharField(
+        source="route.source.name",
+        read_only=True,
+    )
+    destination = serializers.CharField(
+        source="route.destination.name",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Flight
+        fields = (
+            "source",
+            "destination",
+            "departure_time",
+        )
+
+
+class TicketReadSerializer(serializers.ModelSerializer):
+    flight_details = OrderFlightSerializer(
+        source="flight",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Ticket
+        fields = (
+            "id",
+            "row",
+            "seat",
+            "flight",
+            "flight_details",
+        )
+
+
+class OrderReadSerializer(serializers.ModelSerializer):
+    tickets = TicketReadSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "created_at",
+            "tickets",
+        )

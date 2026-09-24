@@ -24,6 +24,7 @@ from airport.serializers import (
     FlightDetailSerializer,
     FlightFilterSerializer,
     OrderSerializer,
+    OrderReadSerializer,
 )
 
 from drf_spectacular.utils import (
@@ -174,7 +175,16 @@ class OrderViewSet(
     serializer_class = OrderSerializer
     permission_classes = (IsAuthenticated,)
 
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return OrderReadSerializer
+
+        return OrderSerializer
+
     def get_queryset(self):
         return Order.objects.filter(
             user=self.request.user
-        ).prefetch_related("tickets")
+        ).prefetch_related(
+            "tickets__flight__route__source",
+            "tickets__flight__route__destination",
+        )

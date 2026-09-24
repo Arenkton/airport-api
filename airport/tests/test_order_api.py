@@ -321,3 +321,41 @@ class OrderApiTests(APITestCase):
 
         self.assertEqual(Order.objects.count(), 0)
         self.assertEqual(Ticket.objects.count(), 0)
+
+    def test_order_list_includes_flight_details(self):
+        order = Order.objects.create(user=self.user)
+
+        Ticket.objects.create(
+            order=order,
+            flight=self.flight,
+            row=5,
+            seat=3,
+        )
+
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(self.order_url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        orders = response.data["results"]
+        self.assertEqual(len(orders), 1)
+
+        ticket = orders[0]["tickets"][0]
+
+        self.assertEqual(ticket["flight"], self.flight.id)
+        self.assertEqual(
+            ticket["flight_details"]["source"],
+            self.source.name,
+        )
+        self.assertEqual(
+            ticket["flight_details"]["destination"],
+            self.destination.name,
+        )
+        self.assertIn(
+            "departure_time",
+            ticket["flight_details"],
+        )
